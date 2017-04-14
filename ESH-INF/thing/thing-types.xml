@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="limitlessled" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Sample Thing Type -->
+	<bridge-type id="iBoxBridge">
+		<label>iBox Bridge</label>
+		<description>This bridge represents a LimitlessLed device.</description>
+		<config-description>
+			<parameter name="ADDR" type="text" required="true">
+				<label>IP or Host Name</label>
+				<description>IP Address of LimitlessLed Bridge</description>
+				<default>172.23.4.225</default>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+	<thing-type id="iBoxLed">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="iBoxBridge" />
+		</supported-bridge-type-refs>
+
+		<label>iBox Led</label>
+		<description>LimitlessLed iBox LED</description>
+		<channels>
+			<channel id="rgbLedOnOff" typeId="rgbLedOnOff" />
+			<channel typeId="rgbLedColor" id="rgbLedColor" />
+			<channel id="rgbLedWhiteOn" typeId="rgbLedWhiteOn" />
+		</channels>
+
+		<config-description>
+			<parameter name="BRIDGE_ADDRESS" type="text" required="true">
+				<label>IP or Host Name</label>
+				<description>IP Address of LimitlessLed Bridge</description>
+				<default>172.23.4.225</default>
+			</parameter>
+
+			<parameter name="ZONE_ID" type="integer" min="0" max="4">
+				<label>Zone Id</label>
+				<description>Identifier of RGB controller zone. 0 is for all zones</description>
+				<default>0</default>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="rgbLed">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="iBoxBridge" />
+		</supported-bridge-type-refs>
+
+		<label>RGB Led</label>
+		<description>LimitlessLed RGB Led Controller</description>
+		<channels>
+			<channel id="rgbLedOnOff" typeId="rgbLedOnOff" />
+			<channel typeId="rgbLedColor" id="rgbLedColor" />
+			<channel id="rgbLedWhiteOn" typeId="rgbLedWhiteOn" />
+		</channels>
+
+		<config-description>
+			<parameter name="BRIDGE_ADDRESS" type="text" required="true">
+				<label>IP or Host Name</label>
+				<description>IP Address of LimitlessLed Bridge</description>
+				<default>172.23.4.225</default>
+			</parameter>
+
+			<parameter name="ZONE_ID" type="integer" min="0" max="4">
+				<label>Zone Id</label>
+				<description>Identifier of RGB controller zone. 0 is for all zones</description>
+				<default>0</default>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+
+	<channel-type id="rgbLedOnOff">
+		<item-type>Switch</item-type>
+		<label>On</label>
+		<description>Switch On/Off Led light</description>
+	</channel-type>
+	<channel-type id="rgbLedWhiteOn">
+		<item-type>Switch</item-type>
+		<label>On</label>
+		<description>Switch On/Off White Led light</description>
+	</channel-type>
+	<channel-type id="rgbLedColor">
+		<item-type>Color</item-type>
+		<label>Color</label>
+		<description>Color of the LED</description>
+		<category>ColorLight</category>
+	</channel-type>
+
+
+
+</thing:thing-descriptions>
