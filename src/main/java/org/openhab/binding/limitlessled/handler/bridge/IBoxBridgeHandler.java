@@ -7,15 +7,27 @@
  */
 package org.openhab.binding.limitlessled.handler.bridge;
 
+import com.jeefix.limitlessled.device.IBoxDevice;
+import com.jeefix.limitlessled.device.LedStripDevice;
+import com.jeefix.limitlessled.session.SessionService;
+import com.jeefix.limitlessled.transport.SimpleTransportService;
+import com.jeefix.limitlessled.transport.TransportService;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.*;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
+import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
+import org.openhab.binding.limitlessled.LimitlessLedBindingConstants;
+import org.openhab.binding.limitlessled.internal.StateForceable;
+import org.osgi.framework.FrameworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * TODO
@@ -28,6 +40,13 @@ public class IBoxBridgeHandler extends BaseBridgeHandler {
 
     private ThingDiscoveryService discoveryService;
 
+    private SessionService sessionService;
+    private TransportService transportService;
+
+    private ScheduledFuture<?> forceStateTimerHandler;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+
     public IBoxBridgeHandler(Bridge bridge) {
         super(bridge);
         discoveryService = new ThingDiscoveryService();
@@ -38,8 +57,17 @@ public class IBoxBridgeHandler extends BaseBridgeHandler {
 
     @Override
     public void initialize() {
-        log.debug("Attemping to initialize bridge {}", this.getThing().getUID());
+        log.debug("Attempting to initialize bridge {}", this.getThing().getUID());
+        if (bundleContext == null) {
+            log.error("Unable to initialize handler, missing OSGI context");
+            return;
+        }
+
         bundleContext.registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<>());
+        String bridgeIP = String.valueOf(getConfig().get(LimitlessLedBindingConstants.CONFIG_BRIDGE_ADDRESS));
+        transportService = new SimpleTransportService(bridgeIP);//new MockTransportService(bridgeIP);
+        sessionService = new SessionService(transportService);
+
         updateStatus(ThingStatus.ONLINE);
         try {
             discoveryService.discoverThings();
@@ -49,6 +77,51 @@ public class IBoxBridgeHandler extends BaseBridgeHandler {
             log.error(String.format("Unable to initialize bridge %s", this.getThing().getUID()), e);
         }
 
+        forceStateTimerHandler = scheduler.scheduleWithFixedDelay(() -> {
+            for (Thing thing : getThing().getThings()) {
+                if (thing.getHandler() instanceof StateForceable) {
+                    try {
+                        ((StateForceable) thing.getHandler()).forceState();
+                    } catch (Exception e) {
+                        log.error(String.format("Unable to perform force state of thing: %s", thing), e);
+                    }
+                }
+            }
+        }, 5000, 5000, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void dispose() {
+        if (forceStateTimerHandler != null) {
+            forceStateTimerHandler.cancel(true);
+        }
+        log.info("Disposing handler");
+    }
+
+    @Override
+    public void childHandlerInitialized(ThingHandler childHandler, Thing childThing) {
+        log.info("childHandlerInitialized");
+    }
+
+    @Override
+    public void childHandlerDisposed(ThingHandler childHandler, Thing childThing) {
+        log.info("childHandlerDisposed");
+    }
+
+    public LedStripDevice getLedStrip(byte zoneId) {
+        LedStripDevice ledStripDevice = new LedStripDevice();
+        ledStripDevice.setSessionService(sessionService);
+        ledStripDevice.setTransportService(transportService);
+        ledStripDevice.setZoneId(zoneId);
+        return ledStripDevice;
+    }
+
+    public IBoxDevice getIBoxLed() {
+        IBoxDevice iBoxDevice = new IBoxDevice();
+        iBoxDevice.setSessionService(sessionService);
+        iBoxDevice.setTransportService(transportService);
+
+        return iBoxDevice;
     }
 
     @Override

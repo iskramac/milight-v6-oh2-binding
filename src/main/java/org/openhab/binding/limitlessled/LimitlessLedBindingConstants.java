@@ -25,14 +25,13 @@ public class LimitlessLedBindingConstants {
     public final static ThingTypeUID THING_TYPE_RGB_LED = new ThingTypeUID(BINDING_ID, "rgbLed");
 
     // List of all Channel ids
-    public final static String CHANNEL_1 = "channel1";
     public final static String CHANNEL_RGB_LED_ONOFF = "rgbLedOnOff";
     public final static String CHANNEL_RGB_LED_WHITE_ON = "rgbLedWhiteOn";
     public final static String CHANNEL_RGB_LED_COLOR = "rgbLedColor";
 
     // Things properties
     public final static String CONFIG_BRIDGE_ADDRESS = "BRIDGE_ADDRESS";
-
+    public final static String CONFIG_LED_STRIP_ZONE = "ZONE_ID";
 
 
 

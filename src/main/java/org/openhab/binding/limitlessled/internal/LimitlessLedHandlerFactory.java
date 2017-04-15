@@ -12,13 +12,16 @@ import static org.openhab.binding.limitlessled.LimitlessLedBindingConstants.*;
 import java.util.Arrays;
 import java.util.List;
 
+import com.jeefix.iot.milight.common.MilightException;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.openhab.binding.limitlessled.handler.bridge.IBoxBridgeHandler;
-import org.openhab.binding.limitlessled.handler.LimitlessRgbLedHandler;
+import org.openhab.binding.limitlessled.handler.device.LimitlessIBoxLedHandler;
+import org.openhab.binding.limitlessled.handler.device.LimitlessRgbLedHandler;
+
 
 /**
  * The {@link LimitlessLedHandlerFactory} is responsible for creating things and thing
@@ -41,13 +44,19 @@ public class LimitlessLedHandlerFactory extends BaseThingHandlerFactory {
 
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
-        if (thingTypeUID.equals(THING_TYPE_RGB_LED) || thingTypeUID.equals(THING_TYPE_IBOX_LED)) {
+        if (thingTypeUID.equals(THING_TYPE_RGB_LED)) {
             return new LimitlessRgbLedHandler(thing);
         }
+
+        if (thingTypeUID.equals(THING_TYPE_IBOX_LED)) {
+            return new LimitlessIBoxLedHandler(thing);
+        }
+
+
         if (thingTypeUID.equals(THING_TYPE_IBOX_BRIDGE)) {
             return new IBoxBridgeHandler((Bridge) thing);
         }
 
-        return null;
+       throw new MilightException(String.format("Attempting to create unsupported thing: %s",thing));
     }
 }

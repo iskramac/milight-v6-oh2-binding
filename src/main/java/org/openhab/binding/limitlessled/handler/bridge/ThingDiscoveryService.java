@@ -32,11 +32,11 @@ public class ThingDiscoveryService extends AbstractDiscoveryService {
 
     public void discoverThings() {
         discoverThing(new ThingUID(THING_TYPE_IBOX_LED, bridgeUID, "0"), "iBox Led", of());
-        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "0"), "Led Strip (All Zones)", of("ZONE_ID", "0"));
-        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "1"), "Led Strip (Zone 1)", of("ZONE_ID", "1"));
-        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "2"), "Led Strip (Zone 2)", of("ZONE_ID", "2"));
-        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "3"), "Led Strip (Zone 3)", of("ZONE_ID", "3"));
-        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "4"), "Led Strip (Zone 4)", of("ZONE_ID", "4"));
+//        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "0"), "Led Strip (All Zones)", of("ZONE_ID", "0"));
+        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "1"), "Led Strip (Zone 1)", of(CONFIG_LED_STRIP_ZONE, "1"));
+        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "2"), "Led Strip (Zone 2)", of(CONFIG_LED_STRIP_ZONE, "2"));
+        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "3"), "Led Strip (Zone 3)", of(CONFIG_LED_STRIP_ZONE, "3"));
+        discoverThing(new ThingUID(THING_TYPE_RGB_LED, bridgeUID, "4"), "Led Strip (Zone 4)", of(CONFIG_LED_STRIP_ZONE, "4"));
 
 
     }
