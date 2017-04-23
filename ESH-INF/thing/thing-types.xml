@@ -13,6 +13,13 @@
 				<description>IP Address of LimitlessLed Bridge</description>
 				<default>172.23.4.225</default>
 			</parameter>
+			<parameter name="STATE_SYNC_PERIOD" type="integer" required="true">
+				<label>Devices sync period</label>
+				<description>Frequency between device-openhab state synchronisation</description>
+				<default>5000</default>
+			</parameter>
+
+
 		</config-description>
 	</bridge-type>
 

@@ -6,6 +6,8 @@ import com.jeefix.limitlessled.device.state.LedStripState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+
 /**
  * TODO write class description here
  * <p>
@@ -25,6 +27,7 @@ public class LedStripDevice extends BaseDevice {
 
     public LedStripDevice on() {
         log.debug("Attempting to turn on device {}", this);
+
         sendCommand(MilightCommand.LED_ON.getHexCommand());
         state.setOn(true);
         log.info("Turned on device {}", this);
@@ -45,9 +48,14 @@ public class LedStripDevice extends BaseDevice {
             throw new MilightArgumentException(String.format("Brightness level should be in range 0-100. Received %d", brightness));
         }
         int normalizedValue = (int) Math.ceil((double) brightness * 64 / 100);
-        String command = String.format(MilightCommand.BRIGHTNESS_SET.getHexCommand(), normalizedValue);
-        sendCommand(command);
+        ArrayList<String> commands = new ArrayList<>(2);
+        if (state.isOn() == false) {
+            state.setOn(true);
+            commands.add(MilightCommand.LED_ON.getHexCommand());
+        }
+        commands.add(String.format(MilightCommand.BRIGHTNESS_SET.getHexCommand(), normalizedValue));
         state.setBrightness(brightness);
+        sendCommandBatch(commands);
         log.info("Changed brightness level to {} of device {}", brightness, this);
         return this;
     }
@@ -55,10 +63,19 @@ public class LedStripDevice extends BaseDevice {
     public LedStripDevice hue(int hue) {
         log.debug("Attempting to set hue level to {} of device {}", hue, this);
         int color = (int) (((float) hue / HUE_MAX_COLOR) * 255);
-        String command = String.format(MilightCommand.HUE_SET.getHexCommand(), color, color, color, color);
-        sendCommand(command);
+
+        ArrayList<String> commands = new ArrayList<>(2);
+        if (state.isOn() == false) {
+            state.setOn(true);
+            commands.add(MilightCommand.LED_ON.getHexCommand());
+        }
+        commands.add(String.format(MilightCommand.HUE_SET.getHexCommand(), color, color, color, color));
+
+        int normalizedValue = (int) Math.ceil((double) getState().getBrightness() * 64 / 100);
+        commands.add(String.format(MilightCommand.BRIGHTNESS_SET.getHexCommand(), normalizedValue));
+
+        sendCommandBatch(commands);
         state.setHue(hue);
-        state.setBrightness(getState().getBrightness());
         state.setWhite(false);
         log.info("Changed hue level to {} of device {}", hue, this);
         return this;
@@ -70,8 +87,15 @@ public class LedStripDevice extends BaseDevice {
             throw new MilightArgumentException(String.format("Saturation level should be in range 0-100. Received %d", saturation));
         }
         int normalizedValue = (int) Math.ceil((double) saturation * 64 / 100);
-        String command = String.format(MilightCommand.SATURATION_SET.getHexCommand(), normalizedValue);
-        sendCommand(command);
+
+        ArrayList<String> commands = new ArrayList<>(2);
+        if (state.isOn() == false) {
+            state.setOn(true);
+            commands.add(MilightCommand.LED_ON.getHexCommand());
+        }
+        commands.add(String.format(MilightCommand.SATURATION_SET.getHexCommand(), normalizedValue));
+
+        sendCommandBatch(commands);
         state.setSaturation(saturation);
         log.info("Changed saturation level to {} of device {}", saturation, this);
         return this;
@@ -79,9 +103,19 @@ public class LedStripDevice extends BaseDevice {
 
     public LedStripDevice whiteOn() {
         log.debug("Attempting to turn on white mode of device {}", this);
-        sendCommand(MilightCommand.WHITE_ON.getHexCommand());
+
+        ArrayList<String> commands = new ArrayList<>(2);
+        if (state.isOn() == false) {
+            state.setOn(true);
+            commands.add(MilightCommand.LED_ON.getHexCommand());
+        }
+        commands.add(MilightCommand.WHITE_ON.getHexCommand());
+
+        int normalizedValue = (int) Math.ceil((double) getState().getBrightness() * 64 / 100);
+        commands.add(String.format(MilightCommand.BRIGHTNESS_SET.getHexCommand(), normalizedValue));
+
         state.setWhite(true);
-        brightness(getState().getBrightness());
+        sendCommandBatch(commands);
         log.info("Turned on  white mode of device {}", this);
         return this;
     }
@@ -89,13 +123,31 @@ public class LedStripDevice extends BaseDevice {
     public LedStripDevice whiteOff() {
         log.debug("Attempting to turn off white mode of device {}", this);
         hue(getState().getHue());
-        state.setWhite(false);
-        brightness(getState().getBrightness());
         log.info("Turned off white mode of device {}", this);
         return this;
     }
 
     public LedStripState getState() {
         return state;
+    }
+
+    @Override
+    public void synchronizeState() {
+        log.debug("Attempting to synchronize device state");
+        if (getState().isOn() == false) {
+            off();
+            return;
+        }else{
+            on();
+        }
+        if (getState().isWhite()) {
+            whiteOn();
+        } else {
+            whiteOff();
+            saturation(getState().getSaturation());
+        }
+        log.info("Successfully synchronized device state: {}", getState());
+
+
     }
 }

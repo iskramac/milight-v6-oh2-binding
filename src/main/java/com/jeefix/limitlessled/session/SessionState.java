@@ -1,6 +1,7 @@
 package com.jeefix.limitlessled.session;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TODO write class description here
@@ -12,6 +13,8 @@ public class SessionState {
     protected byte sessionId1;
     protected byte sessionId2;
     private LocalDateTime lastRefresh;
+    private AtomicInteger sequenceNumber = new AtomicInteger();
+
 
     public SessionState(byte sessionId1, byte sessionId2) {
         this.sessionId1 = sessionId1;
@@ -29,6 +32,13 @@ public class SessionState {
 
     public LocalDateTime getLastRefresh() {
         return lastRefresh;
+    }
+
+    public byte getSequenceNumber() {
+        if (sequenceNumber.get() >= 255) {
+            sequenceNumber.set(0);
+        }
+        return (byte) sequenceNumber.getAndIncrement();
     }
 
     @Override

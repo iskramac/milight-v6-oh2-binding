@@ -31,6 +31,7 @@ public class LimitlessLedBindingConstants {
 
     // Things properties
     public final static String CONFIG_BRIDGE_ADDRESS = "BRIDGE_ADDRESS";
+    public final static String CONFIG_STATE_SYNC_PERIOD = "STATE_SYNC_PERIOD";
     public final static String CONFIG_LED_STRIP_ZONE = "ZONE_ID";
 
 

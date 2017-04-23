@@ -18,4 +18,11 @@ public class DeviceState implements Serializable{
     public void setOn(boolean on) {
         this.on = on;
     }
+
+    @Override
+    public String toString() {
+        return "DeviceState{" +
+                "on=" + on +
+                '}';
+    }
 }

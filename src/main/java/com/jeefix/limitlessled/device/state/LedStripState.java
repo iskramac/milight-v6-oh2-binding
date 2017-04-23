@@ -45,4 +45,14 @@ public class LedStripState extends DeviceState {
     public void setWhite(boolean white) {
         this.white = white;
     }
+
+    @Override
+    public String toString() {
+        return "LedStripState{" +
+                "brightness=" + brightness +
+                ", hue=" + hue +
+                ", saturation=" + saturation +
+                ", white=" + white +
+                "} " + super.toString();
+    }
 }

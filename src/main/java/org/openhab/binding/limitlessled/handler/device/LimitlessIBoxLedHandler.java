@@ -16,6 +16,7 @@ import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
@@ -35,7 +36,7 @@ import static org.openhab.binding.limitlessled.LimitlessLedBindingConstants.*;
  *
  * @author Maciej Iskra - Initial contribution
  */
-public class LimitlessIBoxLedHandler extends BaseThingHandler implements StateForceable{
+public class LimitlessIBoxLedHandler extends BaseThingHandler implements StateForceable {
 
     private Logger logger = LoggerFactory.getLogger(LimitlessIBoxLedHandler.class);
 
@@ -49,34 +50,38 @@ public class LimitlessIBoxLedHandler extends BaseThingHandler implements StateFo
     public void initialize() {
         device = ((IBoxBridgeHandler) this.getBridge().getHandler()).getIBoxLed();
 
-        device.brightness(device.getState().getBrightness());
-        device.hue(device.getState().getHue());
 
-        updateStatus(ThingStatus.ONLINE);
-
+        forceState();
     }
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
 
         logger.debug("Attempting to handle command {} on channel {}", command, channelUID);
-
-        switch (channelUID.getId()) {
-            case CHANNEL_RGB_LED_ONOFF: {
-                handleDeviceOnOff(command);
-                break;
+        if (channelUID != null) {
+            switch (channelUID.getId()) {
+                case CHANNEL_RGB_LED_ONOFF: {
+                    handleDeviceOnOff(command);
+                    break;
+                }
+                case CHANNEL_RGB_LED_COLOR: {
+                    handleDeviceColor(command);
+                    break;
+                }
+                case CHANNEL_RGB_LED_WHITE_ON: {
+                    handleDeviceWhiteOn(command);
+                    break;
+                }
+                default: {
+                    logger.warn("Received message on unsupported channel {}", channelUID.getId());
+                }
             }
-            case CHANNEL_RGB_LED_COLOR: {
-                handleDeviceColor(command);
-                break;
-            }
-            case CHANNEL_RGB_LED_WHITE_ON: {
-                handleDeviceWhiteOn(command);
-                break;
-            }
-            default: {
-                logger.warn("Received message on unsupported channel {}", channelUID.getId());
-            }
+        }
+        //refresh all channels if channel is null and command REFRESH or channel set and command is other than REFRESH
+        if ((channelUID != null && command != RefreshType.REFRESH) || (channelUID == null && command == RefreshType.REFRESH)) {
+            getDeviceChannelStateMap().forEach((channel, state) -> {
+                updateState(channel, state);
+            });
         }
         logger.info("Handled command {} on channel {}", command, channelUID);
 
@@ -139,28 +144,19 @@ public class LimitlessIBoxLedHandler extends BaseThingHandler implements StateFo
         return result;
     }
 
-    protected void forceLastState() {
-        HashMap<String, State> deviceChannelStateMap = getDeviceChannelStateMap();
-
-        handleCommand(getThing().getChannel(CHANNEL_RGB_LED_ONOFF).getUID(), (Command) deviceChannelStateMap.get(CHANNEL_RGB_LED_ONOFF));
-        if (device.getState().isWhite()) {
-            handleCommand(getThing().getChannel(CHANNEL_RGB_LED_WHITE_ON).getUID(), (Command) deviceChannelStateMap.get(CHANNEL_RGB_LED_WHITE_ON));
-        } else {
-            handleCommand(getThing().getChannel(CHANNEL_RGB_LED_COLOR).getUID(), (Command) deviceChannelStateMap.get(CHANNEL_RGB_LED_COLOR));
-        }
-
-    }
-
     @Override
     public void forceState() {
-        HashMap<String, State> deviceChannelStateMap = getDeviceChannelStateMap();
-
-        handleCommand(getThing().getChannel(CHANNEL_RGB_LED_ONOFF).getUID(), (Command) deviceChannelStateMap.get(CHANNEL_RGB_LED_ONOFF));
-        if (device.getState().isWhite()) {
-            handleCommand(getThing().getChannel(CHANNEL_RGB_LED_WHITE_ON).getUID(), (Command) deviceChannelStateMap.get(CHANNEL_RGB_LED_WHITE_ON));
-        } else {
-            handleCommand(getThing().getChannel(CHANNEL_RGB_LED_COLOR).getUID(), (Command) deviceChannelStateMap.get(CHANNEL_RGB_LED_COLOR));
+        try {
+            logger.debug("Attempting to force state of thing: {}", this.getThing().getUID());
+            device.synchronizeState();
+            handleCommand(null, RefreshType.REFRESH);
+            logger.info("Synchronized state of thing {} to: {}", this.getThing().getUID(), device.getState());
+            updateStatus(ThingStatus.ONLINE);
+        } catch (Exception e) {
+            logger.error("Unable to force state", e);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
         }
+
     }
 
 }

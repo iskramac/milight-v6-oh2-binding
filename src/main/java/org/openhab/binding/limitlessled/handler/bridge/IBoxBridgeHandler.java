@@ -19,7 +19,6 @@ import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.limitlessled.LimitlessLedBindingConstants;
 import org.openhab.binding.limitlessled.internal.StateForceable;
-import org.osgi.framework.FrameworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +64,7 @@ public class IBoxBridgeHandler extends BaseBridgeHandler {
 
         bundleContext.registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<>());
         String bridgeIP = String.valueOf(getConfig().get(LimitlessLedBindingConstants.CONFIG_BRIDGE_ADDRESS));
+        int refreshPeriod = Integer.valueOf(String.valueOf(getConfig().get(LimitlessLedBindingConstants.CONFIG_STATE_SYNC_PERIOD)));
         transportService = new SimpleTransportService(bridgeIP);//new MockTransportService(bridgeIP);
         sessionService = new SessionService(transportService);
 
@@ -76,18 +76,8 @@ public class IBoxBridgeHandler extends BaseBridgeHandler {
             updateStatus(ThingStatus.UNINITIALIZED, ThingStatusDetail.HANDLER_INITIALIZING_ERROR, e.getMessage());
             log.error(String.format("Unable to initialize bridge %s", this.getThing().getUID()), e);
         }
+        runStateSyncScheduler(refreshPeriod);
 
-        forceStateTimerHandler = scheduler.scheduleWithFixedDelay(() -> {
-            for (Thing thing : getThing().getThings()) {
-                if (thing.getHandler() instanceof StateForceable) {
-                    try {
-                        ((StateForceable) thing.getHandler()).forceState();
-                    } catch (Exception e) {
-                        log.error(String.format("Unable to perform force state of thing: %s", thing), e);
-                    }
-                }
-            }
-        }, 5000, 5000, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -126,7 +116,26 @@ public class IBoxBridgeHandler extends BaseBridgeHandler {
 
     @Override
     public void thingUpdated(Thing thing) {
+        forceStateTimerHandler.cancel(true);
         //TODO check IP configuration etc.
+    }
+
+
+    protected void runStateSyncScheduler(int refreshPeriod) {
+        if (forceStateTimerHandler != null) {
+            forceStateTimerHandler.cancel(true);
+        }
+        forceStateTimerHandler = scheduler.scheduleWithFixedDelay(() -> {
+            for (Thing thing : getThing().getThings()) {
+                if (thing.getHandler() instanceof StateForceable) {
+                    try {
+                        ((StateForceable) thing.getHandler()).forceState();
+                    } catch (Exception e) {
+                        log.error(String.format("Unable to perform force state of thing: %s", thing), e);
+                    }
+                }
+            }
+        }, refreshPeriod, refreshPeriod, TimeUnit.MILLISECONDS);
     }
 
     @Override

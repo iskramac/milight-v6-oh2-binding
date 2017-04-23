@@ -7,4 +7,5 @@ package com.jeefix.limitlessled.device.state;
  */
 public class IBoxState extends LedStripState {
 
+
 }
